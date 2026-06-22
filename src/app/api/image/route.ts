@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import path from "node:path";
 
 import { transformImage } from "@/lib/server/image";
 
@@ -14,13 +13,7 @@ export async function GET(request: NextRequest) {
 
     const width = Number(searchParams.get("w"));
 
-    const filePath = path.join(
-      process.cwd(),
-      "public",
-      src.replace(/^\/+/, ""),
-    );
-
-    const output = await transformImage(filePath, {
+    const output = await transformImage(src, {
       w: width,
       format: "webp",
     });
