@@ -1,6 +1,11 @@
 import sharp from "sharp";
 
-import type { ImagePath, Transformation } from "@/schemas/image";
+import {
+  imagePathSchema,
+  transformationSchema,
+  type ImagePath,
+  type Transformation,
+} from "@/schemas/image";
 
 async function fetchImage(url: ImagePath) {
   const response = await fetch(url);
@@ -19,11 +24,56 @@ export async function transformImage(
   params: Transformation,
 ): Promise<Buffer<ArrayBufferLike>> {
   const sourceImage = await fetchImage(url);
-  let pipeline = sharp(sourceImage).resize({ width: params.w });
+  let pipeline = sharp(sourceImage).resize({
+    width: params.width,
+  });
 
   if (params.format === "webp") {
-    pipeline = pipeline.webp({ quality: 75 });
+    pipeline = pipeline.webp({ quality: params.quality });
+  } else if (params.format === "jpeg") {
+    pipeline = pipeline.jpeg({ quality: params.quality });
+  } else if (params.format === "png") {
+    pipeline = pipeline.png({ quality: params.quality });
   }
 
   return pipeline.toBuffer();
+}
+
+/**
+ * Validates and parses image parameters.
+ * @param params URLSearchParams containing the image parameters
+ * @returns Object containing the validated src and transformation parameters
+ */
+export function validateImageParams(params: URLSearchParams): {
+  src: ImagePath;
+  transformation: Transformation;
+} {
+  const src = params.get("src");
+  if (!src) {
+    throw new Error("Missing src parameter");
+  }
+
+  const parsedSrc = imagePathSchema.safeParse(src);
+  if (!parsedSrc.success) {
+    throw new Error("Invalid format of src parameter", parsedSrc.error);
+  }
+
+  const width = params.get("w");
+  const quality = params.get("q");
+  const format = params.get("f");
+  const transformation = {
+    ...(width && { width }),
+    ...(quality && { quality }),
+    ...(format && { format }),
+  };
+
+  const parsedTransformation = transformationSchema.safeParse(transformation);
+  if (!parsedTransformation.success) {
+    throw new Error(
+      "Invalid format of transformation parameters",
+      parsedTransformation.error,
+    );
+  }
+
+  return { src: parsedSrc.data, transformation: parsedTransformation.data };
 }

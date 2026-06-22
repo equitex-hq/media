@@ -1,27 +1,22 @@
 import { NextRequest } from "next/server";
 
-import { transformImage } from "@/lib/server/image";
+import { transformImage, validateImageParams } from "@/lib/server/image";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-
-    const src = searchParams.get("src");
-    if (!src) {
-      throw new Error("Missing src parameter");
-    }
-
-    const width = Number(searchParams.get("w"));
+    const { src, transformation } = validateImageParams(searchParams);
 
     const output = await transformImage(src, {
-      w: width,
-      format: "webp",
+      width: transformation.width,
+      quality: transformation.quality,
+      format: transformation.format,
     });
 
     return new Response(new Uint8Array(output), {
       status: 200,
       headers: {
-        "Content-Type": "image/webp",
+        "Content-Type": `image/${transformation.format}`,
       },
     });
   } catch (error) {
