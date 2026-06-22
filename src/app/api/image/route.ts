@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { readFile } from "node:fs/promises";
 import path from "node:path";
-import sharp from "sharp";
+
+import { transformImage } from "@/lib/server/image";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,11 +20,10 @@ export async function GET(request: NextRequest) {
       src.replace(/^\/+/, ""),
     );
 
-    const input = await readFile(filePath);
-    const output = await sharp(input)
-      .resize({ width })
-      .webp({ quality: 75 })
-      .toBuffer();
+    const output = await transformImage(filePath, {
+      w: width,
+      format: "webp",
+    });
 
     return new Response(new Uint8Array(output), {
       status: 200,
