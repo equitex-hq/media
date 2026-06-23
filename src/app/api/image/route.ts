@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": `image/${transformation.format}`,
+        "Cache-Control": "public, max-age=3600",
       },
     });
   } catch (error) {
