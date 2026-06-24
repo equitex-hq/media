@@ -1,5 +1,7 @@
 import sharp from "sharp";
 
+import { redis } from "@/lib/server/redis";
+import { hash } from "@/lib/shared/utils";
 import {
   imagePathSchema,
   transformationSchema,
@@ -76,4 +78,14 @@ export function validateImageParams(params: URLSearchParams): {
   }
 
   return { src: parsedSrc.data, transformation: parsedTransformation.data };
+}
+
+/**
+ * Checks if the image URL has been accessed recently.
+ * @param url Image URL
+ * @returns Boolean whether the image URL has been accessed recently
+ */
+export async function isRecentlyAccessed(url: ImagePath): Promise<boolean> {
+  const cached = await redis.get<string>(`recent-access:${hash(url, 8)}`);
+  return !!cached;
 }
