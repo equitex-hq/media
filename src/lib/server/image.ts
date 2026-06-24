@@ -9,7 +9,12 @@ import {
   type Transformation,
 } from "@/schemas/image";
 
-async function fetchImage(url: ImagePath) {
+/**
+ * Fetches image from URL.
+ * @param url Image URL
+ * @returns Buffer containing the image data
+ */
+export async function fetchImage(url: ImagePath): Promise<Buffer<ArrayBuffer>> {
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -17,8 +22,7 @@ async function fetchImage(url: ImagePath) {
   }
 
   const arrayBuffer = await response.arrayBuffer();
-  const inputBuffer = Buffer.from(arrayBuffer);
-  return inputBuffer;
+  return Buffer.from(arrayBuffer);
 }
 
 export async function transformImage(
