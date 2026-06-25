@@ -1,12 +1,14 @@
 import { NextRequest } from "next/server";
 
 import {
+  isModified,
   isRecentlyAccessed,
   transformImage,
   validateImageParams,
 } from "@/lib/server/image";
 import { redis } from "@/lib/server/redis";
 import { SECONDS_IN_MINUTE } from "@/lib/shared/constants";
+import { NotFoundError } from "@/lib/shared/errors";
 import { hash } from "@/lib/shared/utils";
 
 export async function GET(request: NextRequest) {
@@ -17,7 +19,20 @@ export async function GET(request: NextRequest) {
     // Check recent access
     const recentAccess = await isRecentlyAccessed(src);
 
+    let modified = false;
     if (!recentAccess) {
+      const response = await fetch(src, { method: "HEAD", cache: "no-store" });
+      if (!response.ok) {
+        throw new NotFoundError("Source image not found");
+      }
+
+      const etag = response.headers.get("etag");
+      modified = etag ? await isModified(src, etag) : true;
+
+      if (modified) {
+        await redis.set(`img:org:meta:${hash(src)}`, etag);
+      }
+
       await redis.set(`recent-access:${hash(src, 8)}`, src, {
         ex: SECONDS_IN_MINUTE * 5,
       });

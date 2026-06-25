@@ -93,3 +93,12 @@ export async function isRecentlyAccessed(url: ImagePath): Promise<boolean> {
   const cached = await redis.get<string>(`recent-access:${hash(url, 8)}`);
   return !!cached;
 }
+
+export async function isModified(
+  url: ImagePath,
+  etag: string,
+): Promise<boolean> {
+  etag = etag.replaceAll('"', ""); // Normalize etag
+  const cachedEtag = await redis.get<string>(`img:org:meta:${hash(url)}`);
+  return etag != cachedEtag;
+}
