@@ -25,6 +25,12 @@ export async function fetchImage(url: ImagePath): Promise<Buffer<ArrayBuffer>> {
   return Buffer.from(arrayBuffer);
 }
 
+/**
+ * Transforms image according to Transformation object.
+ * @param image Image buffer
+ * @param params Transformation parameters
+ * @returns Buffer of transformed image
+ */
 export async function transformImage(
   image: Buffer<ArrayBuffer>,
   params: Transformation,
