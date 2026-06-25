@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
+  fetchImage,
   isModified,
   isRecentlyAccessed,
   transformImage,
@@ -36,6 +37,12 @@ export async function GET(request: NextRequest) {
       await redis.set(`recent-access:${hash(src, 8)}`, src, {
         ex: SECONDS_IN_MINUTE * 5,
       });
+    }
+
+    if (modified) {
+      const newImage = await fetchImage(src);
+      const base64Image = newImage.toString("base64");
+      await redis.set(`img:org:data:${hash(src)}`, base64Image);
     }
 
     const output = await transformImage(src, {
