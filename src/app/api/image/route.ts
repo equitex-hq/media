@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import {
   isModified,
@@ -53,6 +53,16 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error(error);
-    return new Response("Internal Server Error", { status: 500 });
+
+    // Not Found Error
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+
+    // Internal Server Error
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
