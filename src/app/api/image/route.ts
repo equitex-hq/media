@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
+  cacheImage,
   fetchImage,
   isModified,
   isRecentlyAccessed,
@@ -41,8 +42,7 @@ export async function GET(request: NextRequest) {
 
     if (modified) {
       const newImage = await fetchImage(src);
-      const base64Image = newImage.toString("base64");
-      await redis.set(`img:org:data:${hash(src)}`, base64Image);
+      await cacheImage(hash(src), "org", newImage);
     }
 
     const image = await fetchImage(src);

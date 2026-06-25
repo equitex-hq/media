@@ -9,6 +9,15 @@ import {
   type Transformation,
 } from "@/schemas/image";
 
+export async function cacheImage(
+  hash: string,
+  type: string,
+  image: Buffer<ArrayBuffer>,
+) {
+  const image_string = image.toString("base64");
+  await redis.set(`img:${type}:data:${hash}`, image_string);
+}
+
 /**
  * Fetches image from URL.
  * @param url Image URL
