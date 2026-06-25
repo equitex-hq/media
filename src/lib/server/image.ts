@@ -26,11 +26,10 @@ export async function fetchImage(url: ImagePath): Promise<Buffer<ArrayBuffer>> {
 }
 
 export async function transformImage(
-  url: ImagePath,
+  image: Buffer<ArrayBuffer>,
   params: Transformation,
 ): Promise<Buffer<ArrayBufferLike>> {
-  const sourceImage = await fetchImage(url);
-  let pipeline = sharp(sourceImage).resize({
+  let pipeline = sharp(image).resize({
     width: params.width,
   });
 

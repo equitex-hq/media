@@ -45,7 +45,8 @@ export async function GET(request: NextRequest) {
       await redis.set(`img:org:data:${hash(src)}`, base64Image);
     }
 
-    const output = await transformImage(src, {
+    const image = await fetchImage(src);
+    const output = await transformImage(image, {
       width: transformation.width,
       quality: transformation.quality,
       format: transformation.format,
