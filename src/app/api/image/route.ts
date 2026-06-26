@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const { src, transformation } = validateImageParams(searchParams);
 
+    const srcHash = hash(src);
+    const tHash = `${srcHash}-${transformation.width ? transformation.width : ""}${transformation.quality ? transformation.quality : ""}${transformation.format}`;
+
     // Check recent access
     const recentAccess = await isRecentlyAccessed(src);
 
@@ -33,7 +36,7 @@ export async function GET(request: NextRequest) {
       modified = etag ? await isModified(src, etag) : true;
 
       if (modified) {
-        await redis.set(`img:org:meta:${hash(src)}`, etag);
+        await redis.set(`img:org:meta:${srcHash}`, etag);
       }
 
       await redis.set(`recent-access:${hash(src, 8)}`, src, {
@@ -43,10 +46,8 @@ export async function GET(request: NextRequest) {
 
     if (modified) {
       const newImage = await fetchImage(src);
-      await cacheImage(hash(src), "org", newImage);
+      await cacheImage(srcHash, "org", newImage);
     }
-
-    const tHash = `${hash(src)}-${transformation.width ? transformation.width : ""}${transformation.quality ? transformation.quality : ""}${transformation.format}`;
 
     // Return cached transformation if possible
     const cachedTransformation = await fetchCachedImage("var", tHash);
@@ -61,8 +62,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Cached original
-    const oHash = hash(src);
-    const cachedOriginal = await fetchCachedImage("org", oHash);
+    const cachedOriginal = await fetchCachedImage("org", srcHash);
     if (cachedOriginal) {
       const transformed = await transformImage(cachedOriginal, {
         width: transformation.width,
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     }
 
     const image = await fetchImage(src);
-    await cacheImage(oHash, "org", image);
+    await cacheImage(srcHash, "org", image);
 
     const transformed = await transformImage(image, {
       width: transformation.width,
