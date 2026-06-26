@@ -97,13 +97,16 @@ export async function GET(request: NextRequest) {
     }
 
     const image = await fetchImage(src);
-    const output = await transformImage(image, {
+    await cacheImage(oHash, "org", image);
+
+    const transformed = await transformImage(image, {
       width: transformation.width,
       quality: transformation.quality,
       format: transformation.format,
     });
+    await cacheImage(tHash, "var", transformed);
 
-    return new Response(new Uint8Array(output), {
+    return new Response(new Uint8Array(transformed), {
       status: 200,
       headers: {
         "Content-Type": `image/${transformation.format}`,
