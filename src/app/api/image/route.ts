@@ -4,7 +4,6 @@ import {
   cacheImage,
   fetchCachedImage,
   fetchImage,
-  isCached,
   isModified,
   isRecentlyAccessed,
   transformImage,
@@ -47,53 +46,40 @@ export async function GET(request: NextRequest) {
       await cacheImage(hash(src), "org", newImage);
     }
 
-    // Return cached transformation if possible
     const tHash = `${hash(src)}-${transformation.width ? transformation.width : ""}${transformation.quality ? transformation.quality : ""}${transformation.format}`;
-    const tCached = await isCached("var", tHash);
-    if (tCached) {
-      const cachedTransformation = await fetchCachedImage("var", tHash);
 
-      if (cachedTransformation) {
-        return new Response(new Uint8Array(cachedTransformation), {
-          status: 200,
-          headers: {
-            "Content-Type": `image/${transformation.format}`,
-            "Cache-Control": "public, max-age=3600",
-          },
-        });
-      }
-
-      // Handle deletion while fetching
-      console.warn("Cached transformation was deleted while fetching");
+    // Return cached transformation if possible
+    const cachedTransformation = await fetchCachedImage("var", tHash);
+    if (cachedTransformation) {
+      return new Response(new Uint8Array(cachedTransformation), {
+        status: 200,
+        headers: {
+          "Content-Type": `image/${transformation.format}`,
+          "Cache-Control": "public, max-age=3600",
+        },
+      });
     }
 
     // Cached original
     const oHash = hash(src);
-    const oCached = await isCached("org", oHash);
-    if (oCached) {
-      const cachedOriginal = await fetchCachedImage("org", oHash);
+    const cachedOriginal = await fetchCachedImage("org", oHash);
+    if (cachedOriginal) {
+      const transformed = await transformImage(cachedOriginal, {
+        width: transformation.width,
+        quality: transformation.quality,
+        format: transformation.format,
+      });
 
-      if (cachedOriginal) {
-        const transformed = await transformImage(cachedOriginal, {
-          width: transformation.width,
-          quality: transformation.quality,
-          format: transformation.format,
-        });
+      // Cache transformation
+      await cacheImage(tHash, "var", transformed);
 
-        // Cache transformation
-        await cacheImage(tHash, "var", transformed);
-
-        return new Response(new Uint8Array(transformed), {
-          status: 200,
-          headers: {
-            "Content-Type": `image/${transformation.format}`,
-            "Cache-Control": "public, max-age=3600",
-          },
-        });
-      }
-
-      // Handle deletion while fetching
-      console.warn("Cached original was deleted while fetching");
+      return new Response(new Uint8Array(transformed), {
+        status: 200,
+        headers: {
+          "Content-Type": `image/${transformation.format}`,
+          "Cache-Control": "public, max-age=3600",
+        },
+      });
     }
 
     const image = await fetchImage(src);

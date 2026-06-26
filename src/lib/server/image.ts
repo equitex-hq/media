@@ -125,9 +125,3 @@ export async function isModified(
   const cachedEtag = await redis.get<string>(`img:org:meta:${hash(url)}`);
   return etag != cachedEtag;
 }
-
-export async function isCached(type: string, hash: string): Promise<boolean> {
-  const key = `img:${type}:data:${hash}`;
-  const cached = await redis.exists(key);
-  return !!cached;
-}
