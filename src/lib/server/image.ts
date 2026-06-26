@@ -18,6 +18,15 @@ export async function cacheImage(
   await redis.set(`img:${type}:data:${hash}`, image_string);
 }
 
+export async function fetchCachedImage(
+  type: string,
+  hash: string,
+): Promise<Buffer<ArrayBuffer> | null> {
+  const key = `img:${type}:data:${hash}`;
+  const cached = await redis.get<string>(key);
+  return cached ? Buffer.from(cached, "base64") : null;
+}
+
 /**
  * Fetches image from URL.
  * @param url Image URL
@@ -115,4 +124,10 @@ export async function isModified(
   etag = etag.replaceAll('"', ""); // Normalize etag
   const cachedEtag = await redis.get<string>(`img:org:meta:${hash(url)}`);
   return etag != cachedEtag;
+}
+
+export async function isCached(type: string, hash: string): Promise<boolean> {
+  const key = `img:${type}:data:${hash}`;
+  const cached = await redis.exists(key);
+  return !!cached;
 }

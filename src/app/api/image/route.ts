@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   cacheImage,
+  fetchCachedImage,
   fetchImage,
+  isCached,
   isModified,
   isRecentlyAccessed,
   transformImage,
@@ -43,6 +45,26 @@ export async function GET(request: NextRequest) {
     if (modified) {
       const newImage = await fetchImage(src);
       await cacheImage(hash(src), "org", newImage);
+    }
+
+    // Return cached transformation if possible
+    const tHash = `${hash(src)}-${transformation.width ? transformation.width : ""}${transformation.quality ? transformation.quality : ""}${transformation.format}`;
+    const tCached = await isCached("var", tHash);
+    if (tCached) {
+      const cachedTransformation = await fetchCachedImage("var", tHash);
+
+      if (cachedTransformation) {
+        return new Response(new Uint8Array(cachedTransformation), {
+          status: 200,
+          headers: {
+            "Content-Type": `image/${transformation.format}`,
+            "Cache-Control": "public, max-age=3600",
+          },
+        });
+      }
+
+      // Handle deletion while fetching
+      console.warn("Cached transformation was deleted while fetching");
     }
 
     const image = await fetchImage(src);
