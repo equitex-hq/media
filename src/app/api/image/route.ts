@@ -67,6 +67,35 @@ export async function GET(request: NextRequest) {
       console.warn("Cached transformation was deleted while fetching");
     }
 
+    // Cached original
+    const oHash = hash(src);
+    const oCached = await isCached("org", oHash);
+    if (oCached) {
+      const cachedOriginal = await fetchCachedImage("org", oHash);
+
+      if (cachedOriginal) {
+        const transformed = await transformImage(cachedOriginal, {
+          width: transformation.width,
+          quality: transformation.quality,
+          format: transformation.format,
+        });
+
+        // Cache transformation
+        await cacheImage(tHash, "var", transformed);
+
+        return new Response(new Uint8Array(transformed), {
+          status: 200,
+          headers: {
+            "Content-Type": `image/${transformation.format}`,
+            "Cache-Control": "public, max-age=3600",
+          },
+        });
+      }
+
+      // Handle deletion while fetching
+      console.warn("Cached original was deleted while fetching");
+    }
+
     const image = await fetchImage(src);
     const output = await transformImage(image, {
       width: transformation.width,

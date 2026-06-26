@@ -12,7 +12,7 @@ import {
 export async function cacheImage(
   hash: string,
   type: string,
-  image: Buffer<ArrayBuffer>,
+  image: Buffer<ArrayBufferLike>,
 ) {
   const image_string = image.toString("base64");
   await redis.set(`img:${type}:data:${hash}`, image_string);
