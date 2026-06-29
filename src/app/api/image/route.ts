@@ -17,7 +17,7 @@ import { hash } from "@/lib/shared/utils";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const { src, transformation } = validateImageParams(searchParams);
+    const { src, transformation, ttl } = validateImageParams(searchParams);
 
     const srcHash = hash(src);
     const tHash = `${srcHash}-${transformation.width ? transformation.width : ""}${transformation.quality ? transformation.quality : ""}${transformation.format}`;
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         status: 200,
         headers: {
           "Content-Type": `image/${transformation.format}`,
-          "Cache-Control": "public, max-age=3600",
+          "Cache-Control": `public, max-age=${ttl}`,
         },
       });
     }
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         status: 200,
         headers: {
           "Content-Type": `image/${transformation.format}`,
-          "Cache-Control": "public, max-age=3600",
+          "Cache-Control": `public, max-age=${ttl}`,
         },
       });
     }
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": `image/${transformation.format}`,
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": `public, max-age=${ttl}`,
       },
     });
   } catch (error) {

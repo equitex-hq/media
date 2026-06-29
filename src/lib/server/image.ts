@@ -76,6 +76,7 @@ export async function transformImage(
 export function validateImageParams(params: URLSearchParams): {
   src: ImagePath;
   transformation: Transformation;
+  ttl: number;
 } {
   const src = params.get("src");
   if (!src) {
@@ -104,7 +105,13 @@ export function validateImageParams(params: URLSearchParams): {
     );
   }
 
-  return { src: parsedSrc.data, transformation: parsedTransformation.data };
+  const ttl = params.get("ttl");
+
+  return {
+    src: parsedSrc.data,
+    transformation: parsedTransformation.data,
+    ttl: ttl ? Number(ttl) : 3600,
+  };
 }
 
 /**
